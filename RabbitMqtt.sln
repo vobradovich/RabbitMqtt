@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32922.545
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitMqtt", "RabbitMqtt\RabbitMqtt.csproj", "{90380A60-F984-4F93-AF4A-6B0F919B6914}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitMqtt.Client", "RabbitMqtt.Client\RabbitMqtt.Client.csproj", "{78903C6A-AEBA-4622-BB76-1B8656F19D11}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{7F462279-58E4-4655-91CF-36EC9A9FCED6}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		README.md = README.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{90380A60-F984-4F93-AF4A-6B0F919B6914}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{90380A60-F984-4F93-AF4A-6B0F919B6914}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90380A60-F984-4F93-AF4A-6B0F919B6914}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{90380A60-F984-4F93-AF4A-6B0F919B6914}.Release|Any CPU.Build.0 = Release|Any CPU
+		{78903C6A-AEBA-4622-BB76-1B8656F19D11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{78903C6A-AEBA-4622-BB76-1B8656F19D11}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{78903C6A-AEBA-4622-BB76-1B8656F19D11}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{78903C6A-AEBA-4622-BB76-1B8656F19D11}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {48FB7F48-70C7-4E3E-876D-037EFEDF756E}
+	EndGlobalSection
+EndGlobal
