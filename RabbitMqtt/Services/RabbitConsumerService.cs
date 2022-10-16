@@ -43,7 +43,7 @@ public class RabbitConsumerService : IConsumerService
 
         CloseChannel();
         CreateChannel();
-        return new ValueTask();
+        return ValueTask.CompletedTask;
     }
 
     private void CallbackException(object? sender, CallbackExceptionEventArgs e)
@@ -139,7 +139,7 @@ public class RabbitConsumerService : IConsumerService
         _connection.RecoverySucceeded -= ConnectionRecovered;
         _connection.ConnectionRecoveryError -= ConnectionRecoveryError;
         CloseChannel();
-        return new ValueTask();
+        return ValueTask.CompletedTask;
     }
 
     private void CloseChannel()
@@ -156,13 +156,13 @@ public class RabbitConsumerService : IConsumerService
     {
         var routingKey = mqttTopic.Replace('/', '.');
         _channel?.QueueBind(_queueName, _options.Value.TopicExchange, routingKey);
-        return new ValueTask();
+        return ValueTask.CompletedTask;
     }
 
     public ValueTask Unsubscribe(string mqttTopic)
     {
         var routingKey = mqttTopic.Replace('/', '.');
         _channel?.QueueUnbind(_queueName, _options.Value.TopicExchange, routingKey);
-        return new ValueTask();
+        return ValueTask.CompletedTask;
     }
 }

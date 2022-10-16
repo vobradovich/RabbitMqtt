@@ -16,21 +16,21 @@ public class MockConsumerService : IConsumerService
 
     public ValueTask DisposeAsync()
     {
-        return new ValueTask();
+        return ValueTask.CompletedTask;
     }
 
     public ValueTask StartAsync(Func<MqttApplicationMessage, CancellationToken, ValueTask> consumer, CancellationToken cancellationToken = default)
     {
-        return new ValueTask();
+        return ValueTask.CompletedTask;
     }
 
     public ValueTask Subscribe(string mqttTopic)
     {
-        return new ValueTask();
+        return ValueTask.CompletedTask;
     }
 
     public ValueTask Unsubscribe(string mqttTopic)
     {
-        return new ValueTask();
+        return ValueTask.CompletedTask;
     }
 }
