@@ -1,9 +1,11 @@
 ﻿using System.Diagnostics;
 using System.Text;
+using Microsoft.Extensions.Options;
 using MQTTnet;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using RabbitMqtt.Contracts;
+using RabbitMqtt.Options;
 
 namespace RabbitMqtt.Services;
 
@@ -11,6 +13,7 @@ public class RabbitConsumerService : IConsumerService
 {
     private readonly string _connectionId;
     private readonly IAutorecoveringConnection _connection;
+    private readonly IOptions<RabbitMqOptions> _options;
     private readonly ILogger<RabbitConsumerService> _logger;
 
     private Func<MqttApplicationMessage, CancellationToken, ValueTask>? _consumer;
@@ -21,10 +24,12 @@ public class RabbitConsumerService : IConsumerService
     public RabbitConsumerService(
         string connectionId,
         IAutorecoveringConnection connection,
+        IOptions<RabbitMqOptions> options,
         ILogger<RabbitConsumerService> logger)
     {
         _connectionId = connectionId;
         _connection = connection;
+        _options = options;
         _logger = logger;
     }
 
@@ -63,23 +68,24 @@ public class RabbitConsumerService : IConsumerService
         _channel = _connection.CreateModel();
         _channel.BasicQos(0, 1, false);
         _queueName = _channel.QueueDeclare(
-            $"{nameof(RabbitMqtt)}.{_connectionId}",
+            $"{_options.Value.QueuePrefix}.{_connectionId}",
             durable: true,
             exclusive: false,
             autoDelete: false,
             arguments: new Dictionary<string, object>
             {
-                ["x-queue-type"] = "quorum",
-                ["x-expires"] = 60 * 60 * 1000, // 60 minutes
+                ["x-queue-type"] = _options.Value.QueueType,
+                ["x-expires"] = _options.Value.QueueTtl,
             }).QueueName;
 
         var consumer = new AsyncEventingBasicConsumer(_channel);
-        consumer.Received += OnReceived;
+        consumer.Received += Received;
         var consumerTag = _channel.BasicConsume(queue: _queueName, autoAck: false, exclusive: false, consumer: consumer);
-        _logger.LogInformation("RabbitMQ Client Start {rabbitmq}", new { Exchange = "amq.topic", QueueName = _queueName, ConsumerTag = consumerTag });
+        _logger.LogInformation("RabbitMQ Client Start {rabbitmq}", new { _options.Value.TopicExchange, QueueName = _queueName, ConsumerTag = consumerTag });
     }
 
-    private async Task OnReceived(object sender, BasicDeliverEventArgs args)
+
+    private async Task Received(object sender, BasicDeliverEventArgs args)
     {
         var sw = Stopwatch.StartNew();
         var props = args.BasicProperties;
@@ -127,12 +133,12 @@ public class RabbitConsumerService : IConsumerService
 
     public ValueTask DisposeAsync()
     {
+        // Suppress finalization.
+        GC.SuppressFinalize(this);
         _connection.CallbackException -= CallbackException;
         _connection.RecoverySucceeded -= ConnectionRecovered;
         _connection.ConnectionRecoveryError -= ConnectionRecoveryError;
         CloseChannel();
-        // Suppress finalization.
-        GC.SuppressFinalize(this);
         return new ValueTask();
     }
 
@@ -149,14 +155,14 @@ public class RabbitConsumerService : IConsumerService
     public ValueTask Subscribe(string mqttTopic)
     {
         var routingKey = mqttTopic.Replace('/', '.');
-        _channel?.QueueBind(_queueName, "amq.topic", routingKey);
+        _channel?.QueueBind(_queueName, _options.Value.TopicExchange, routingKey);
         return new ValueTask();
     }
 
     public ValueTask Unsubscribe(string mqttTopic)
     {
         var routingKey = mqttTopic.Replace('/', '.');
-        _channel?.QueueUnbind(_queueName, "amq.topic", routingKey);
+        _channel?.QueueUnbind(_queueName, _options.Value.TopicExchange, routingKey);
         return new ValueTask();
     }
 }

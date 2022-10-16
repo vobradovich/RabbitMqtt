@@ -1,5 +1,7 @@
-﻿using RabbitMQ.Client;
+﻿using Microsoft.Extensions.Options;
+using RabbitMQ.Client;
 using RabbitMqtt.Contracts;
+using RabbitMqtt.Options;
 
 namespace RabbitMqtt.Services;
 
@@ -31,8 +33,9 @@ public class ConsumerServiceFactory
     private IConsumerService CreateRabbitService(string connectionId)
     {
         var logger = _serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger<RabbitConsumerService>();
+        var options = _serviceProvider.GetRequiredService<IOptions<RabbitMqOptions>>();
         _connection ??= CreateConnection();
-        return new RabbitConsumerService(connectionId, _connection, logger);
+        return new RabbitConsumerService(connectionId, _connection, options, logger);
     }
 
     private IAutorecoveringConnection CreateConnection()

@@ -1,10 +1,12 @@
 ﻿using System.Net;
 using System.Threading.Channels;
+using Microsoft.Extensions.Options;
 using MQTTnet;
 using Polly;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using RabbitMqtt.Logging;
+using RabbitMqtt.Options;
 
 namespace RabbitMqtt.Services
 {
@@ -13,6 +15,7 @@ namespace RabbitMqtt.Services
         private readonly ChannelReader<MqttApplicationMessage> _channelReader;
         private readonly ChannelWriter<MqttApplicationMessage> _channelWriter;
         private readonly ConnectionFactory _connectionFactory;
+        private readonly IOptions<RabbitMqOptions> _options;
         private readonly ILogger<RabbitProducerService> _logger;
         private IAutorecoveringConnection? _connection;
         private IModel? _channel;
@@ -21,11 +24,13 @@ namespace RabbitMqtt.Services
             ChannelReader<MqttApplicationMessage> channelReader,
             ChannelWriter<MqttApplicationMessage> channelWriter,
             ConnectionFactory connectionFactory,
+            IOptions<RabbitMqOptions> options,
             ILogger<RabbitProducerService> logger)
         {
             _channelReader = channelReader;
             _channelWriter = channelWriter;
             _connectionFactory = connectionFactory;
+            _options = options;
             _logger = logger;
         }
 
@@ -69,7 +74,7 @@ namespace RabbitMqtt.Services
 
             var policy = Policy
                 .Handle<Exception>()
-                .WaitAndRetryForever(sleepDurationProvider: i => TimeSpan.FromSeconds(i < 5 ? i : 5), onRetry: OnRetry);
+                .WaitAndRetryForever(sleepDurationProvider: i => TimeSpan.FromMilliseconds(i < 5 ? i * 100 : 500), onRetry: OnRetry);
 
             await foreach (var message in _channelReader.ReadAllAsync(stoppingToken))
             {
@@ -106,7 +111,7 @@ namespace RabbitMqtt.Services
                 properties.ContentType = message.ContentType;
             }
             _channel.BasicPublish(
-                exchange: "amq.topic",
+                exchange: _options.Value.TopicExchange,
                 routingKey: routingKey,
                 basicProperties: properties,
                 body: message.Payload);

@@ -3,7 +3,7 @@ using RabbitMQ.Client;
 
 namespace RabbitMqtt.Logging;
 
-public static class RabbitServiceLogging
+public static class RabbitProducerServiceLogging
 {
     private static readonly Action<ILogger, string, string, Exception?> _producerServiceStarting = LoggerMessage.Define<string, string>(
         LogLevel.Information,
