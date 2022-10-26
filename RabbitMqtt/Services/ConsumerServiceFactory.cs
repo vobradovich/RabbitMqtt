@@ -1,6 +1,9 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.AspNetCore.Connections;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMqtt.Contracts;
+using RabbitMqtt.Logging;
 using RabbitMqtt.Options;
 
 namespace RabbitMqtt.Services;
@@ -8,12 +11,17 @@ namespace RabbitMqtt.Services;
 public class ConsumerServiceFactory
 {
     private readonly IServiceProvider _serviceProvider;
+    private readonly ConnectionFactory _connectionFactory;
     private readonly ILogger<ConsumerServiceFactory> _logger;
     private IAutorecoveringConnection? _connection;
 
-    public ConsumerServiceFactory(IServiceProvider serviceProvider, ILogger<ConsumerServiceFactory> logger)
+    public ConsumerServiceFactory(
+        IServiceProvider serviceProvider,
+        ConnectionFactory connectionFactory,
+        ILogger<ConsumerServiceFactory> logger)
     {
         _serviceProvider = serviceProvider;
+        _connectionFactory = connectionFactory;
         _logger = logger;
     }
 
@@ -42,13 +50,21 @@ public class ConsumerServiceFactory
     {
         try
         {
-            var f = _serviceProvider.GetRequiredService<ConnectionFactory>();
-            return (IAutorecoveringConnection)f.CreateConnection();
+            return _connectionFactory.CreateAutorecoveringConnection("rabbitmqtt:consumer");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "RabbitMQ Connect Error");
+            _logger.CreateConnectionError(ex);
             throw;
         }
+    }
+}
+
+public static class RabbitExtensions
+{
+    public static IAutorecoveringConnection CreateAutorecoveringConnection(this ConnectionFactory connectionFactory, string clientName)
+    {
+        var hostNames = connectionFactory.HostName.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return (IAutorecoveringConnection)connectionFactory.CreateConnection(hostNames, clientName);
     }
 }

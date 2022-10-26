@@ -16,7 +16,6 @@ public class MqttService : BackgroundService
     private readonly ChannelWriter<MqttApplicationMessage> _channelWriter;
     private readonly ILogger<MqttService> _logger;
     private readonly ConcurrentDictionary<string, IConsumerService> _clientConsumers = new();
-    private readonly Func<MqttApplicationMessage, CancellationToken, ValueTask> _consumer;
 
     public MqttService(
         MqttServer server,
@@ -28,12 +27,6 @@ public class MqttService : BackgroundService
         _consumerServiceFactory = consumerServiceFactory;
         _channelWriter = channelWriter;
         _logger = logger;
-
-        _consumer = async (MqttApplicationMessage message, CancellationToken cancellationToken)
-            => await _server.InjectApplicationMessage(new InjectedMqttApplicationMessage(message)
-            {
-                SenderClientId = SenderClientId,
-            });
 
         server.StartedAsync += Server_StartedAsync;
         server.StoppedAsync += Server_StoppedAsync;
@@ -74,7 +67,7 @@ public class MqttService : BackgroundService
         var cosumerService = _consumerServiceFactory.CreateConsumerService(arg.ClientId);
         if (_clientConsumers.TryAdd(arg.ClientId, cosumerService))
         {
-            await cosumerService.StartAsync(_consumer);
+            await cosumerService.StartAsync(Consumer);
         }
     }
 
@@ -130,5 +123,13 @@ public class MqttService : BackgroundService
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         return Task.CompletedTask;
+    }
+
+    private async ValueTask Consumer(MqttApplicationMessage message, CancellationToken cancellationToken)
+    {
+        await _server.InjectApplicationMessage(new InjectedMqttApplicationMessage(message)
+        {
+            SenderClientId = SenderClientId,
+        });
     }
 }

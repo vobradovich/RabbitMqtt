@@ -1,5 +1,4 @@
-﻿using System.Net;
-using System.Threading.Channels;
+﻿using System.Threading.Channels;
 using Microsoft.Extensions.Options;
 using MQTTnet;
 using Polly;
@@ -65,7 +64,7 @@ namespace RabbitMqtt.Services
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.ProducerServiceStarting(_connectionFactory);
-            _connection = (IAutorecoveringConnection)_connectionFactory.CreateConnection();
+            _connection = _connectionFactory.CreateAutorecoveringConnection("rabbitmqtt:producer");
             _connection.RecoverySucceeded += RecoverySucceeded;
             _connection.ConnectionRecoveryError += ConnectionRecoveryError;
             _channel = _connection.CreateModel();
@@ -135,19 +134,13 @@ namespace RabbitMqtt.Services
             _logger.ProduceMessageRetry(ex, retry);
         }
 
-        private void ChannelShutdown(object? sender, ShutdownEventArgs e)
-        {
-            _logger.LogWarning("RabbitMQ ChannelShutdown {Info}", new { HostName = Dns.GetHostName(), e.Cause });
-        }
+        private void ChannelShutdown(object? sender, ShutdownEventArgs args)
+            => _logger.ChannelShutdown(args);
 
-        private void RecoverySucceeded(object? sender, EventArgs e)
-        {
-            _logger.LogWarning("RabbitMQ RecoverySucceeded {Info}", new { HostName = Dns.GetHostName() });
-        }
+        private void RecoverySucceeded(object? sender, EventArgs args)
+            => _logger.ConnectionRecoverySucceeded();
 
-        private void ConnectionRecoveryError(object? sender, ConnectionRecoveryErrorEventArgs e)
-        {
-            _logger.LogError(e.Exception, "RabbitMQ RecoveryError {Info}", new { HostName = Dns.GetHostName() });
-        }
+        private void ConnectionRecoveryError(object? sender, ConnectionRecoveryErrorEventArgs args)
+            => _logger.ConnectionRecoveryError(args);
     }
 }
